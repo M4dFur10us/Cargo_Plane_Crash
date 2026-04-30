@@ -1,0 +1,128 @@
+
+
+## 🇧🇷 VERSÃO EM PORTUGUÊS
+
+### 📌 Direitos Autorais
+
+Copyright (c) 2026 xXM4dFur10usXx
+SteamID 76561198301862284
+Todos os direitos reservados.
+
+---
+
+### ✔️ Permissões
+
+Você está autorizado a:
+
+* Utilizar este mod em seu servidor DayZ
+* Modificar arquivos de configuração (JSON) para uso no seu servidor
+* Modificar o código para uso **privado e interno**
+
+---
+
+### ❌ Restrições
+
+Você NÃO está autorizado a:
+
+* Reenviar (reupload) este mod, modificado ou não, para a Steam Workshop
+* Redistribuir este mod em qualquer formato
+* Utilizar este código, total ou parcialmente, em outros mods públicos
+* Publicar versões derivadas deste mod
+* Comercializar ou monetizar este mod sem autorização expressa do autor
+* Alegar autoria total ou parcial deste projeto
+
+---
+
+### 💰 Monetização de Servidor
+
+O uso deste mod em servidores deve seguir as regras oficiais de monetização da Bohemia Interactive.
+
+Qualquer uso fora desse escopo requer autorização prévia do autor.
+
+---
+
+### ⚠️ Aviso Legal
+
+Este mod é fornecido “como está”, sem garantias de funcionamento, suporte ou compatibilidade.
+
+O autor não se responsabiliza por:
+
+* perda de dados
+* falhas de servidor
+* conflitos com outros mods
+* uso indevido do software
+
+---
+
+### 📬 Contato
+
+Para permissões especiais, parcerias ou dúvidas:
+
+Autor xXM4dFur10usXx
+SteamID 76561198301862284
+
+---
+
+---
+
+## 🇺🇸 ENGLISH VERSION
+
+### 📌 Copyright
+
+Copyright (c) 2026 xXM4dFur10usXx
+SteamID 76561198301862284
+All rights reserved.
+
+---
+
+### ✔️ Permissions
+
+You are allowed to:
+
+* Use this mod on your DayZ server
+* Modify configuration files (JSON) for server use
+* Modify the code for **private/internal use only**
+
+---
+
+### ❌ Restrictions
+
+You are NOT allowed to:
+
+* Reupload this mod (modified or unmodified) to Steam Workshop
+* Redistribute this mod in any form
+* Use this code, in whole or in part, in other public mods
+* Publish derivative versions of this mod
+* Monetize this mod without explicit permission from the author
+* Claim this work as your own
+
+---
+
+### 💰 Server Monetization
+
+Server usage must comply with Bohemia Interactive monetization rules.
+
+Any use beyond this scope requires prior authorization from the author.
+
+---
+
+### ⚠️ Disclaimer
+
+This mod is provided “as is”, without warranties of any kind.
+
+The author is not responsible for:
+
+* data loss
+* server issues
+* mod conflicts
+* improper use
+
+---
+
+### 📬 Contact
+
+For permissions, partnerships, or inquiries:
+
+Author: xXM4dFur10usXx
+SteamID 76561198301862284
+
