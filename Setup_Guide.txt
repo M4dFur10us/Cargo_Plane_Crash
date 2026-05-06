@@ -1,0 +1,1470 @@
+# M4D AirPlane Crash Event
+# Server Admin Setup Guide
+# Guia de Configuração para Administradores de Servidor
+
+================================================================================
+PORTUGUÊS
+================================================================================
+
+## 1. Objetivo deste documento
+
+Este arquivo é um guia prático para donos e administradores de servidores DayZ configurarem o M4D AirPlane Crash Event pela primeira vez.
+
+Ele explica:
+
+- quais arquivos precisam ser adicionados;
+- como preparar o types.xml;
+- onde os arquivos JSON serão criados;
+- como configurar eventos, locais, loot, zumbis, gás, animais e logs;
+- como testar o funcionamento após a instalação.
+
+IMPORTANTE:
+Os arquivos de documentação PlaneCrashSettings.txt, PlaneCrashSites.txt e PlaneCrashLoot.txt contêm comentários explicativos.
+Arquivos JSON reais do DayZ NÃO aceitam comentários com //.
+Não copie esses arquivos de documentação diretamente para dentro dos .json do servidor.
+
+
+================================================================================
+2. Instalação básica do mod
+================================================================================
+
+1. Adicione o mod ao servidor normalmente, como qualquer outro mod de DayZ.
+
+2. Inclua o mod na linha de inicialização do servidor.
+
+Exemplo:
+
+    -mod=@M4D_AirPlaneCrash
+
+3. Inicie o servidor uma vez para o mod criar automaticamente a pasta de configuração.
+
+A pasta será criada em:
+
+    $profile/M4D_AirPlaneCrash/
+
+Arquivos principais esperados:
+
+    PlaneCrashSettings.json
+    PlaneCrashSites.json
+    PlaneCrashLoot.json
+
+4. Após o primeiro boot, desligue o servidor e configure os arquivos JSON conforme a necessidade do servidor.
+
+
+================================================================================
+3. Configuração obrigatória do types.xml
+================================================================================
+
+Para garantir persistência e funcionamento correto das entidades do evento, adicione as entradas do arquivo Types.txt ao types.xml do seu servidor.
+
+O arquivo Types.txt inclui as classes principais do mod:
+
+    M4d_AirPlaneCrash
+    ShippingContainerKeys_Blue
+    ShippingContainerKeys_Orange
+    ShippingContainerKeys_Red
+    ShippingContainerKeys_Yellow
+    M4D_WreckContainerRed
+    M4D_WreckContainerBlue
+    M4D_WreckContainerYellow
+    M4D_WreckContainerOrange
+    M4D_CrashRewardChest
+    M4DCrashStorage_MilitaryBox
+
+Recomendação:
+
+- Não altere `nominal` para valores acima de 0 nas entidades estruturais do evento, como:
+  - `M4d_AirPlaneCrash`
+  - `M4D_WreckContainerRed`
+  - `M4D_WreckContainerBlue`
+  - `M4D_WreckContainerYellow`
+  - `M4D_WreckContainerOrange`
+  - `M4D_CrashRewardChest`
+  - `M4DCrashStorage_MilitaryBox`
+- Essas entidades estruturais devem ser criadas e gerenciadas pelo sistema do evento, não pela economia vanilla.
+- Mantenha `count_in_map="1"` para permitir persistência correta no mundo.
+
+Sobre as chaves:
+
+- As classes `ShippingContainerKeys_Blue`, `ShippingContainerKeys_Orange`, `ShippingContainerKeys_Red` e `ShippingContainerKeys_Yellow` podem permanecer com `nominal` e `min` em 0 se você quiser que as chaves sejam geradas exclusivamente pelos zumbis do evento.
+- Caso o dono/admin do servidor queira que as chaves também apareçam naturalmente no mapa pela economia do servidor, ele pode ajustar `nominal`, `min`, `lifetime`, `restock`, `usage` e `value` conforme o balanceamento desejado.
+- Se as chaves forem adicionadas à economia do mapa, o evento poderá ser acessado por jogadores que encontraram a chave fora do crash, e não apenas por quem matou o zumbi portador.
+
+IMPORTANTE:
+As entradas devem ser mescladas dentro do types.xml real do servidor.
+Não substitua todo o types.xml do servidor pelo arquivo Types.txt, a menos que você saiba exatamente o que está fazendo.
+
+
+================================================================================
+4. PlaneCrashSettings.json
+================================================================================
+
+Este é o arquivo principal de configuração global do mod.
+
+Ele controla:
+
+- ativação do mod;
+- quantidade máxima de eventos ativos;
+- raios de segurança;
+- notificações;
+- logs;
+- pathgraph/navmesh;
+- cores de container;
+- quantidade de zumbis;
+- drop de chave;
+- quantidade de loot;
+- condição do loot;
+- alarme de abertura;
+- fallbacks de loot.
+
+-------------------------------------------------------------------------------
+4.1. Ativação do mod
+-------------------------------------------------------------------------------
+
+    "EnableMod": 1
+
+Valores:
+
+    1 = mod ativo
+    0 = mod desligado
+
+Quando EnableMod estiver em 0, o sistema tenta executar uma limpeza dos eventos existentes no próximo boot.
+
+Use isso se quiser remover os eventos ativos do mapa de forma controlada.
+
+
+-------------------------------------------------------------------------------
+4.2. Quantidade máxima de eventos ativos
+-------------------------------------------------------------------------------
+
+    "MaxActivePlaneEvents": 3
+
+Define quantos crashes podem existir simultaneamente no mapa.
+
+Exemplos:
+
+    1  = evento raro
+    3  = frequência equilibrada
+    5  = servidor com atividade média/alta
+    10 = limite alto recomendado apenas para servidores preparados
+
+Observação:
+O sistema trabalha por reposição de eventos ativos.
+Ele não usa intervalo tradicional de spawn.
+Se houver espaço dentro do limite MaxActivePlaneEvents, o sistema pode tentar criar outro evento rapidamente.
+
+
+-------------------------------------------------------------------------------
+4.3. Raios de segurança
+-------------------------------------------------------------------------------
+
+    "SafeRadius": 1000
+    "DistanceRadius": 1000
+    "CleanupRadius": 1000
+
+SafeRadius:
+Distância mínima entre jogadores e o local escolhido para nascimento de um novo crash.
+
+DistanceRadius:
+Distância mínima entre eventos ativos.
+
+CleanupRadius:
+Distância que os jogadores precisam estar do evento expirado para que o servidor possa deletá-lo com segurança.
+
+Recomendação inicial:
+
+    SafeRadius: 1000
+    DistanceRadius: 1000
+    CleanupRadius: 1000
+
+
+-------------------------------------------------------------------------------
+4.4. Notificação global
+-------------------------------------------------------------------------------
+
+    "EnableCrashNotification": 1
+
+Valores:
+
+    1 = envia mensagem global quando o avião cai
+    0 = evento silencioso
+
+A mensagem específica de cada local é configurada no PlaneCrashSites.json.
+
+
+-------------------------------------------------------------------------------
+4.5. Logs e telemetria
+-------------------------------------------------------------------------------
+
+Configurações principais:
+
+    "EnableDebugLogging": 0
+    "AlsoLogToRPT": 1
+    "EnableEventLogging": 1
+    "EnableEventLogPerEvent": 1
+    "EnableDebugLogPerEvent": 1
+    "LogPlayerInteractions": 1
+    "LogAssetCoordinates": 1
+    "LogThreatDetails": 1
+    "LogSoundDispatch": 0
+    "LogWorldStateSnapshots": 1
+
+Recomendação para servidor live:
+
+    EnableDebugLogging = 0
+    AlsoLogToRPT = 1
+    EnableEventLogging = 1
+    LogSoundDispatch = 0
+
+Use DebugLogging apenas para diagnóstico. Em servidor cheio, debug excessivo pode gerar log spam.
+
+
+-------------------------------------------------------------------------------
+4.6. Pathgraph / Navmesh
+-------------------------------------------------------------------------------
+
+    "EnableWreckPathgraphUpdate": 1
+    "EnableContainerPathgraphUpdate": 1
+    "EnableZombiePathgraphUpdate": 1
+
+Essas opções ajudam a IA a lidar melhor com o avião, o container e os zumbis.
+
+Recomendação:
+
+    mantenha 1, salvo se seu servidor tiver problemas específicos de performance.
+
+
+-------------------------------------------------------------------------------
+4.7. Cores de container
+-------------------------------------------------------------------------------
+
+    "EnableContainerBlue": 1
+    "EnableContainerRed": 1
+    "EnableContainerYellow": 1
+    "EnableContainerOrange": 1
+    "PreferredContainer": "Random"
+
+PreferredContainer pode ser:
+
+    "Random"
+    "Red"
+    "Blue"
+    "Yellow"
+    "Orange"
+
+Se usar "Random", o sistema escolhe entre as cores habilitadas.
+
+
+-------------------------------------------------------------------------------
+4.8. Zumbis e chave
+-------------------------------------------------------------------------------
+
+    "ZombieCount": 15
+    "EnableZombieKeyDrop": 1
+
+ZombieCount:
+Quantidade alvo de zumbis no evento. O sistema possui limite interno de segurança.
+
+EnableZombieKeyDrop:
+
+    1 = um dos zumbis pode carregar a chave
+    0 = não haverá drop de chave por zumbi
+
+IMPORTANTE:
+Se ZombieCount for 0, não haverá zumbis.
+Se não houver zumbis, não haverá chave dropada por zumbi.
+
+
+-------------------------------------------------------------------------------
+4.9. Loot principal
+-------------------------------------------------------------------------------
+
+    "MinLootItems": 2
+    "MaxLootItems": 5
+
+Controla a quantidade de itens sorteados para o baú principal dentro do container trancado.
+
+O pool de itens vem do PlaneCrashLoot.json, conforme o tier do local.
+
+
+-------------------------------------------------------------------------------
+4.10. Loot da caixa militar externa
+-------------------------------------------------------------------------------
+
+    "MinMilitaryBoxItems": 10
+    "MaxMilitaryBoxItems": 17
+
+Controla a quantidade de itens gerados na caixa militar/suprimento externa.
+
+
+-------------------------------------------------------------------------------
+4.11. Condição do loot e alarme
+-------------------------------------------------------------------------------
+
+    "PristineLoot": 1
+    "EnableOpeningAlarm": 1
+
+PristineLoot:
+
+    1 = loot em condição pristine
+    0 = condição aleatória
+
+EnableOpeningAlarm:
+
+    1 = toca alarme quando o container é aberto
+    0 = sem alarme de abertura
+
+O alarme é audível a distância, com propagação baseada na distância do jogador.
+
+
+-------------------------------------------------------------------------------
+4.12. Fallbacks de loot
+-------------------------------------------------------------------------------
+
+    "EnableDefaultLootItems": 0
+    "EnableDefaultMilitaryBoxLoot": 0
+
+Se ativados, o mod pode usar pools default como medida de segurança.
+
+Para servidores personalizados, recomenda-se configurar corretamente o PlaneCrashLoot.json e manter esses valores em 0.
+
+
+================================================================================
+5. PlaneCrashSites.json
+================================================================================
+
+Este arquivo define todos os locais possíveis de crash.
+
+Estrutura principal:
+
+    "CustomCrashSites": [
+        {
+            "Position": [ X, 0.0, Z ],
+            "NotificationMessage": "Mensagem do evento",
+            "Tier": 3,
+            "ZombieTypes": [],
+            "WolfSpawn": {},
+            "BearSpawn": {},
+            "GasZone": {}
+        }
+    ]
+
+-------------------------------------------------------------------------------
+5.1. Position
+-------------------------------------------------------------------------------
+
+Exemplo:
+
+    "Position": [
+        2752.96,
+        0.0,
+        9306.79
+    ]
+
+Use:
+
+    X = coordenada X do mapa
+    Y = 0.0
+    Z = coordenada Z do mapa
+
+IMPORTANTE:
+Deixe o Y como 0.0.
+O mod ajusta automaticamente o evento à superfície do terreno.
+
+
+-------------------------------------------------------------------------------
+5.2. NotificationMessage
+-------------------------------------------------------------------------------
+
+Mensagem enviada aos jogadores se EnableCrashNotification estiver ativo.
+
+Exemplo:
+
+    "NotificationMessage": "An airplane was shot down near Lopatino!"
+
+Se quiser que aquele local específico seja silencioso:
+
+    "NotificationMessage": ""
+
+
+-------------------------------------------------------------------------------
+5.3. Tier
+-------------------------------------------------------------------------------
+
+Define o tier de loot do local.
+
+Valores recomendados:
+
+    1 = loot mais simples
+    2 = loot intermediário
+    3 = loot mais valioso
+
+O tier determina quais arrays do PlaneCrashLoot.json serão usados:
+
+    Tier1_MainLoot / Tier1_MilitaryBoxLoot
+    Tier2_MainLoot / Tier2_MilitaryBoxLoot
+    Tier3_MainLoot / Tier3_MilitaryBoxLoot
+
+
+-------------------------------------------------------------------------------
+5.4. ZombieTypes
+-------------------------------------------------------------------------------
+
+Lista de classes de zumbis permitidas naquele local.
+
+Exemplo:
+
+    "ZombieTypes": [
+        "ZmbM_NBC_Grey",
+        "ZmbM_SoldierNormal"
+    ]
+
+A quantidade total é controlada por ZombieCount em PlaneCrashSettings.json.
+
+
+-------------------------------------------------------------------------------
+5.5. WolfSpawn
+-------------------------------------------------------------------------------
+
+Exemplo:
+
+    "WolfSpawn": {
+        "Enabled": 1,
+        "Count": 4,
+        "Radius": 0.0,
+        "Types": [
+            "Animal_CanisLupus_Grey",
+            "Animal_CanisLupus_White"
+        ]
+    }
+
+Enabled:
+
+    1 = ativa lobos neste local
+    0 = desativa lobos neste local
+
+Radius:
+
+    0.0 = usa cálculo padrão do mod
+
+
+-------------------------------------------------------------------------------
+5.6. BearSpawn
+-------------------------------------------------------------------------------
+
+Exemplo:
+
+    "BearSpawn": {
+        "Enabled": 1,
+        "Count": 2,
+        "Radius": 0.0,
+        "Types": [
+            "Animal_UrsusArctos"
+        ]
+    }
+
+Observação:
+O total combinado de lobos + ursos possui limite interno de segurança.
+
+
+-------------------------------------------------------------------------------
+5.7. GasZone
+-------------------------------------------------------------------------------
+
+Exemplo:
+
+    "GasZone": {
+        "Enabled": 0
+    }
+
+Valores:
+
+    1 = cria zona tóxica no evento
+    0 = sem gás
+
+Se GasZone estiver ativo, o sistema força zumbis NBC quando necessário.
+
+
+================================================================================
+6. PlaneCrashLoot.json
+================================================================================
+
+Este arquivo define os pools de loot.
+
+IMPORTANTE:
+Arquivos JSON reais não aceitam comentários.
+Use PlaneCrashLoot.txt apenas como referência.
+
+-------------------------------------------------------------------------------
+6.1. Estrutura de item
+-------------------------------------------------------------------------------
+
+Exemplo:
+
+    {
+        "Item": "AK101",
+        "Chance": 1.0,
+        "Attachments": [
+            "AK_PlasticBttstck",
+            "AK_PlasticHndgrd",
+            "Mag_AK101_30Rnd"
+        ],
+        "CargoItems": []
+    }
+
+Campos:
+
+Item:
+Classe exata do item.
+
+Chance:
+Probabilidade do item ser escolhido.
+
+    1.0 = 100%
+    0.5 = 50%
+    0.1 = 10%
+
+Attachments:
+Itens anexados diretamente ao item principal.
+
+CargoItems:
+Itens colocados dentro do inventário do item principal, quando aplicável.
+
+
+-------------------------------------------------------------------------------
+6.2. Loot principal por tier
+-------------------------------------------------------------------------------
+
+Arrays:
+
+    Tier1_MainLoot
+    Tier2_MainLoot
+    Tier3_MainLoot
+
+Esses pools abastecem o baú principal dentro do container trancado.
+
+
+-------------------------------------------------------------------------------
+6.3. Loot da caixa militar por tier
+-------------------------------------------------------------------------------
+
+Arrays:
+
+    Tier1_MilitaryBoxLoot
+    Tier2_MilitaryBoxLoot
+    Tier3_MilitaryBoxLoot
+
+Esses pools abastecem a caixa militar/suprimento externa.
+
+
+-------------------------------------------------------------------------------
+6.4. Loot default / fallback
+-------------------------------------------------------------------------------
+
+Arrays:
+
+    DefaultLootItems
+    DefaultMilitaryBoxLoot
+
+Usados como fallback se configurado no PlaneCrashSettings.json ou se o servidor precisar de uma camada extra de segurança.
+
+
+================================================================================
+7. Presets recomendados
+================================================================================
+
+-------------------------------------------------------------------------------
+7.1. Servidor hardcore / evento raro
+-------------------------------------------------------------------------------
+
+    MaxActivePlaneEvents: 1
+    SafeRadius: 1000 ou 1500
+    DistanceRadius: 1500
+    CleanupRadius: 1000
+    ZombieCount: 15 a 20
+    EnableOpeningAlarm: 1
+    Locais: áreas remotas, florestas, regiões militares afastadas
+
+
+-------------------------------------------------------------------------------
+7.2. Servidor equilibrado
+-------------------------------------------------------------------------------
+
+    MaxActivePlaneEvents: 3
+    SafeRadius: 1000
+    DistanceRadius: 1000
+    CleanupRadius: 1000
+    ZombieCount: 10 a 15
+    EnableOpeningAlarm: 1
+    Locais: mistura de áreas remotas e médias
+
+
+-------------------------------------------------------------------------------
+7.3. Servidor PvP / alta atividade
+-------------------------------------------------------------------------------
+
+    MaxActivePlaneEvents: 5 a 10
+    SafeRadius: 700 a 1000
+    DistanceRadius: 700 a 1000
+    CleanupRadius: 1000
+    ZombieCount: 8 a 15
+    EnableOpeningAlarm: 1
+    Locais: áreas centrais, rotas de conflito, proximidade moderada de cidades
+
+
+-------------------------------------------------------------------------------
+7.4. Evento sem zumbis
+-------------------------------------------------------------------------------
+
+    ZombieCount: 0
+    EnableZombieKeyDrop: 0
+
+Atenção:
+Sem zumbis, não há chave dropada por zumbi.
+Use esse modo apenas se o servidor tiver outra lógica para acesso, como chaves spawnando pela economia do mapa, traders, eventos paralelos ou roleplay.
+
+
+================================================================================
+8. Checklist de primeira instalação
+================================================================================
+
+Antes de abrir o servidor para jogadores:
+
+[ ] Mod adicionado na linha de inicialização.
+[ ] types.xml atualizado com as entradas do Types.txt.
+[ ] Servidor iniciado uma vez para gerar a pasta $profile/M4D_AirPlaneCrash/.
+[ ] PlaneCrashSettings.json revisado.
+[ ] PlaneCrashSites.json revisado.
+[ ] PlaneCrashLoot.json revisado.
+[ ] Pelo menos 1 crash site válido configurado.
+[ ] Pelo menos 1 item válido em cada pool de loot usado.
+[ ] ZombieCount e EnableZombieKeyDrop configurados de forma coerente.
+[ ] Logs ativados para o primeiro teste.
+[ ] Servidor iniciado sem erros no RPT.
+[ ] Evento criado corretamente.
+[ ] Container abre com a chave correta.
+[ ] Loot aparece no baú.
+[ ] Evento é removido após expiração/cleanup.
+[ ] Restart testado com evento ativo.
+
+
+================================================================================
+9. Problemas comuns
+================================================================================
+
+-------------------------------------------------------------------------------
+9.1. O evento não nasce
+-------------------------------------------------------------------------------
+
+Verifique:
+
+- EnableMod está em 1.
+- MaxActivePlaneEvents é maior que 0.
+- Existe ao menos um site válido em PlaneCrashSites.json.
+- Não há jogador próximo do local.
+- Não há outro evento próximo.
+- O JSON não está quebrado.
+- O RPT não mostra erro de classe inexistente.
+
+
+-------------------------------------------------------------------------------
+9.2. A chave não aparece
+-------------------------------------------------------------------------------
+
+Verifique:
+
+- ZombieCount é maior que 0.
+- EnableZombieKeyDrop está em 1.
+- Os zumbis foram criados.
+- O zumbi portador da chave não foi perdido/limpo por outro sistema.
+- A classe da chave existe no types.xml.
+
+
+-------------------------------------------------------------------------------
+9.3. Loot não aparece
+-------------------------------------------------------------------------------
+
+Verifique:
+
+- PlaneCrashLoot.json está válido.
+- MinLootItems e MaxLootItems estão acima de 0.
+- Os classnames dos itens estão corretos.
+- O container/baú foi criado corretamente.
+- O baú ficou visível após abrir o container.
+
+
+-------------------------------------------------------------------------------
+9.4. O evento desaparece
+-------------------------------------------------------------------------------
+
+O evento tem tempo de vida controlado.
+
+Se não houver jogadores próximos após expiração, ele será removido.
+
+Se jogadores estiverem próximos, o timer pode pausar/estender a permanência do evento.
+
+
+-------------------------------------------------------------------------------
+9.5. Muito log no servidor
+-------------------------------------------------------------------------------
+
+Para servidor live, mantenha:
+
+    EnableDebugLogging = 0
+    LogSoundDispatch = 0
+
+Use logs detalhados apenas para testes ou diagnóstico.
+
+
+================================================================================
+10. Procedimento recomendado para atualização
+================================================================================
+
+1. Faça backup da pasta:
+
+    $profile/M4D_AirPlaneCrash/
+
+2. Faça backup do types.xml.
+
+3. Atualize o mod.
+
+4. Inicie o servidor em ambiente de teste, se possível.
+
+5. Verifique o RPT.
+
+6. Teste um evento ativo.
+
+7. Só depois publique no servidor principal.
+
+
+================================================================================
+ENGLISH
+================================================================================
+
+## 1. Purpose of this document
+
+This file is a practical setup guide for DayZ server owners and administrators installing M4D AirPlane Crash Event for the first time.
+
+It explains:
+
+- which files must be added;
+- how to prepare types.xml;
+- where the JSON files are created;
+- how to configure events, sites, loot, zombies, gas, animals, and logs;
+- how to test the mod after installation.
+
+IMPORTANT:
+PlaneCrashSettings.txt, PlaneCrashSites.txt, and PlaneCrashLoot.txt are documentation/reference files with comments.
+Real DayZ JSON files do NOT support // comments.
+Do not copy these documentation files directly into your server JSON files.
+
+
+================================================================================
+2. Basic mod installation
+================================================================================
+
+1. Add the mod to your server like any other DayZ mod.
+
+2. Add it to your server startup line.
+
+Example:
+
+    -mod=@M4D_AirPlaneCrash
+
+3. Start the server once so the mod can generate its configuration folder.
+
+Folder path:
+
+    $profile/M4D_AirPlaneCrash/
+
+Expected main files:
+
+    PlaneCrashSettings.json
+    PlaneCrashSites.json
+    PlaneCrashLoot.json
+
+4. After the first boot, stop the server and configure the JSON files as needed.
+
+
+================================================================================
+3. Required types.xml configuration
+================================================================================
+
+To ensure persistence and proper event entity behavior, add the entries from Types.txt to your server types.xml.
+
+Types.txt includes the main mod classes:
+
+    M4d_AirPlaneCrash
+    ShippingContainerKeys_Blue
+    ShippingContainerKeys_Orange
+    ShippingContainerKeys_Red
+    ShippingContainerKeys_Yellow
+    M4D_WreckContainerRed
+    M4D_WreckContainerBlue
+    M4D_WreckContainerYellow
+    M4D_WreckContainerOrange
+    M4D_CrashRewardChest
+    M4DCrashStorage_MilitaryBox
+
+Recommendation:
+
+- Do not set `nominal` above 0 for structural event entities such as:
+  - `M4d_AirPlaneCrash`
+  - `M4D_WreckContainerRed`
+  - `M4D_WreckContainerBlue`
+  - `M4D_WreckContainerYellow`
+  - `M4D_WreckContainerOrange`
+  - `M4D_CrashRewardChest`
+  - `M4DCrashStorage_MilitaryBox`
+- These structural entities should be created and managed by the event system, not by the vanilla economy.
+- Keep `count_in_map="1"` for correct world persistence.
+
+About keys:
+
+- `ShippingContainerKeys_Blue`, `ShippingContainerKeys_Orange`, `ShippingContainerKeys_Red`, and `ShippingContainerKeys_Yellow` may remain with `nominal` and `min` set to 0 if you want keys to be generated exclusively by event zombies.
+- If the server owner/admin wants keys to spawn naturally through the server economy, they may adjust `nominal`, `min`, `lifetime`, `restock`, `usage`, and `value` according to their desired balance.
+- If keys are added to the map economy, crash containers may be accessed by players who found a key outside the crash event, not only by players who killed the key carrier zombie.
+
+IMPORTANT:
+Merge these entries into your real server types.xml.
+Do not replace your entire server types.xml with Types.txt unless you know exactly what you are doing.
+
+
+================================================================================
+4. PlaneCrashSettings.json
+================================================================================
+
+This is the main global configuration file.
+
+It controls:
+
+- mod activation;
+- maximum active events;
+- safety radiuses;
+- notifications;
+- logs;
+- pathgraph/navmesh;
+- container colors;
+- zombie count;
+- key drop;
+- loot amount;
+- loot condition;
+- opening alarm;
+- loot fallbacks.
+
+-------------------------------------------------------------------------------
+4.1. Mod activation
+-------------------------------------------------------------------------------
+
+    "EnableMod": 1
+
+Values:
+
+    1 = mod enabled
+    0 = mod disabled
+
+When EnableMod is set to 0, the system attempts to clean existing events on the next server boot.
+
+
+-------------------------------------------------------------------------------
+4.2. Maximum active events
+-------------------------------------------------------------------------------
+
+    "MaxActivePlaneEvents": 3
+
+Defines how many crash events may exist on the map at the same time.
+
+Examples:
+
+    1  = rare event
+    3  = balanced frequency
+    5  = medium/high activity server
+    10 = high limit, recommended only for prepared servers
+
+Note:
+The system uses an active event replenishment model.
+It does not use a traditional spawn interval.
+If there is room within MaxActivePlaneEvents, the system may try to spawn another event quickly.
+
+
+-------------------------------------------------------------------------------
+4.3. Safety radiuses
+-------------------------------------------------------------------------------
+
+    "SafeRadius": 1000
+    "DistanceRadius": 1000
+    "CleanupRadius": 1000
+
+SafeRadius:
+Minimum distance between players and the selected spawn site.
+
+DistanceRadius:
+Minimum distance between active crash events.
+
+CleanupRadius:
+Distance players must be away from an expired event before the server safely deletes it.
+
+Recommended initial values:
+
+    SafeRadius: 1000
+    DistanceRadius: 1000
+    CleanupRadius: 1000
+
+
+-------------------------------------------------------------------------------
+4.4. Global notification
+-------------------------------------------------------------------------------
+
+    "EnableCrashNotification": 1
+
+Values:
+
+    1 = broadcast a global message when a plane crashes
+    0 = silent event
+
+The specific message for each site is configured in PlaneCrashSites.json.
+
+
+-------------------------------------------------------------------------------
+4.5. Logs and telemetry
+-------------------------------------------------------------------------------
+
+Main settings:
+
+    "EnableDebugLogging": 0
+    "AlsoLogToRPT": 1
+    "EnableEventLogging": 1
+    "EnableEventLogPerEvent": 1
+    "EnableDebugLogPerEvent": 1
+    "LogPlayerInteractions": 1
+    "LogAssetCoordinates": 1
+    "LogThreatDetails": 1
+    "LogSoundDispatch": 0
+    "LogWorldStateSnapshots": 1
+
+Recommended for live servers:
+
+    EnableDebugLogging = 0
+    AlsoLogToRPT = 1
+    EnableEventLogging = 1
+    LogSoundDispatch = 0
+
+Use DebugLogging only for diagnostics. On high population servers, excessive debug can create log spam.
+
+
+-------------------------------------------------------------------------------
+4.6. Pathgraph / Navmesh
+-------------------------------------------------------------------------------
+
+    "EnableWreckPathgraphUpdate": 1
+    "EnableContainerPathgraphUpdate": 1
+    "EnableZombiePathgraphUpdate": 1
+
+These options help AI deal with the airplane wreck, container, and zombies.
+
+Recommendation:
+
+    keep them enabled unless your server has specific performance issues.
+
+
+-------------------------------------------------------------------------------
+4.7. Container colors
+-------------------------------------------------------------------------------
+
+    "EnableContainerBlue": 1
+    "EnableContainerRed": 1
+    "EnableContainerYellow": 1
+    "EnableContainerOrange": 1
+    "PreferredContainer": "Random"
+
+PreferredContainer can be:
+
+    "Random"
+    "Red"
+    "Blue"
+    "Yellow"
+    "Orange"
+
+If set to "Random", the system picks from enabled colors.
+
+
+-------------------------------------------------------------------------------
+4.8. Zombies and key
+-------------------------------------------------------------------------------
+
+    "ZombieCount": 15
+    "EnableZombieKeyDrop": 1
+
+ZombieCount:
+Target zombie count for the crash event. The system has an internal safety cap.
+
+EnableZombieKeyDrop:
+
+    1 = one zombie may carry the container key
+    0 = no zombie key drop
+
+IMPORTANT:
+If ZombieCount is 0, no zombies will spawn.
+If no zombies spawn, no zombie-carried key will be generated.
+
+
+-------------------------------------------------------------------------------
+4.9. Main reward loot
+-------------------------------------------------------------------------------
+
+    "MinLootItems": 2
+    "MaxLootItems": 5
+
+Controls the amount of items pulled into the main reward chest inside the locked container.
+
+The item pool comes from PlaneCrashLoot.json based on the site tier.
+
+
+-------------------------------------------------------------------------------
+4.10. External military box loot
+-------------------------------------------------------------------------------
+
+    "MinMilitaryBoxItems": 10
+    "MaxMilitaryBoxItems": 17
+
+Controls the amount of items spawned in the external military/supply box.
+
+
+-------------------------------------------------------------------------------
+4.11. Loot condition and alarm
+-------------------------------------------------------------------------------
+
+    "PristineLoot": 1
+    "EnableOpeningAlarm": 1
+
+PristineLoot:
+
+    1 = pristine loot
+    0 = random item condition
+
+EnableOpeningAlarm:
+
+    1 = alarm when the container is opened
+    0 = no opening alarm
+
+The alarm can be heard from distance, with sound propagation based on player distance.
+
+
+-------------------------------------------------------------------------------
+4.12. Loot fallbacks
+-------------------------------------------------------------------------------
+
+    "EnableDefaultLootItems": 0
+    "EnableDefaultMilitaryBoxLoot": 0
+
+If enabled, the mod may use default loot pools as a safety measure.
+
+For customized servers, configure PlaneCrashLoot.json correctly and keep these values at 0.
+
+
+================================================================================
+5. PlaneCrashSites.json
+================================================================================
+
+This file defines all possible crash locations.
+
+Main structure:
+
+    "CustomCrashSites": [
+        {
+            "Position": [ X, 0.0, Z ],
+            "NotificationMessage": "Event message",
+            "Tier": 3,
+            "ZombieTypes": [],
+            "WolfSpawn": {},
+            "BearSpawn": {},
+            "GasZone": {}
+        }
+    ]
+
+-------------------------------------------------------------------------------
+5.1. Position
+-------------------------------------------------------------------------------
+
+Example:
+
+    "Position": [
+        2752.96,
+        0.0,
+        9306.79
+    ]
+
+Use:
+
+    X = map X coordinate
+    Y = 0.0
+    Z = map Z coordinate
+
+IMPORTANT:
+Leave Y as 0.0.
+The mod automatically aligns the event to the terrain surface.
+
+
+-------------------------------------------------------------------------------
+5.2. NotificationMessage
+-------------------------------------------------------------------------------
+
+Message sent to players if EnableCrashNotification is enabled.
+
+Example:
+
+    "NotificationMessage": "An airplane was shot down near Lopatino!"
+
+If you want this specific site to be silent:
+
+    "NotificationMessage": ""
+
+
+-------------------------------------------------------------------------------
+5.3. Tier
+-------------------------------------------------------------------------------
+
+Defines the loot tier of the site.
+
+Recommended values:
+
+    1 = lower-tier loot
+    2 = intermediate loot
+    3 = high-value loot
+
+The tier determines which PlaneCrashLoot.json arrays are used:
+
+    Tier1_MainLoot / Tier1_MilitaryBoxLoot
+    Tier2_MainLoot / Tier2_MilitaryBoxLoot
+    Tier3_MainLoot / Tier3_MilitaryBoxLoot
+
+
+-------------------------------------------------------------------------------
+5.4. ZombieTypes
+-------------------------------------------------------------------------------
+
+List of zombie classnames allowed at that location.
+
+Example:
+
+    "ZombieTypes": [
+        "ZmbM_NBC_Grey",
+        "ZmbM_SoldierNormal"
+    ]
+
+The total number is controlled by ZombieCount in PlaneCrashSettings.json.
+
+
+-------------------------------------------------------------------------------
+5.5. WolfSpawn
+-------------------------------------------------------------------------------
+
+Example:
+
+    "WolfSpawn": {
+        "Enabled": 1,
+        "Count": 4,
+        "Radius": 0.0,
+        "Types": [
+            "Animal_CanisLupus_Grey",
+            "Animal_CanisLupus_White"
+        ]
+    }
+
+Enabled:
+
+    1 = enable wolves at this site
+    0 = disable wolves at this site
+
+Radius:
+
+    0.0 = use the mod default calculation
+
+
+-------------------------------------------------------------------------------
+5.6. BearSpawn
+-------------------------------------------------------------------------------
+
+Example:
+
+    "BearSpawn": {
+        "Enabled": 1,
+        "Count": 2,
+        "Radius": 0.0,
+        "Types": [
+            "Animal_UrsusArctos"
+        ]
+    }
+
+Note:
+The combined total of wolves + bears has an internal safety cap.
+
+
+-------------------------------------------------------------------------------
+5.7. GasZone
+-------------------------------------------------------------------------------
+
+Example:
+
+    "GasZone": {
+        "Enabled": 0
+    }
+
+Values:
+
+    1 = create toxic zone at the event
+    0 = no gas
+
+If GasZone is enabled, the system forces NBC zombies when needed.
+
+
+================================================================================
+6. PlaneCrashLoot.json
+================================================================================
+
+This file defines loot pools.
+
+IMPORTANT:
+Real JSON files do not support comments.
+Use PlaneCrashLoot.txt as reference only.
+
+-------------------------------------------------------------------------------
+6.1. Item structure
+-------------------------------------------------------------------------------
+
+Example:
+
+    {
+        "Item": "AK101",
+        "Chance": 1.0,
+        "Attachments": [
+            "AK_PlasticBttstck",
+            "AK_PlasticHndgrd",
+            "Mag_AK101_30Rnd"
+        ],
+        "CargoItems": []
+    }
+
+Fields:
+
+Item:
+Exact classname of the item.
+
+Chance:
+Probability of this item being selected.
+
+    1.0 = 100%
+    0.5 = 50%
+    0.1 = 10%
+
+Attachments:
+Items attached directly to the main item.
+
+CargoItems:
+Items placed inside the main item's inventory when applicable.
+
+
+-------------------------------------------------------------------------------
+6.2. Main loot by tier
+-------------------------------------------------------------------------------
+
+Arrays:
+
+    Tier1_MainLoot
+    Tier2_MainLoot
+    Tier3_MainLoot
+
+These pools feed the main reward chest inside the locked container.
+
+
+-------------------------------------------------------------------------------
+6.3. Military box loot by tier
+-------------------------------------------------------------------------------
+
+Arrays:
+
+    Tier1_MilitaryBoxLoot
+    Tier2_MilitaryBoxLoot
+    Tier3_MilitaryBoxLoot
+
+These pools feed the external military/supply box.
+
+
+-------------------------------------------------------------------------------
+6.4. Default / fallback loot
+-------------------------------------------------------------------------------
+
+Arrays:
+
+    DefaultLootItems
+    DefaultMilitaryBoxLoot
+
+Used as fallback if configured in PlaneCrashSettings.json or if the server needs an extra safety layer.
+
+
+================================================================================
+7. Recommended presets
+================================================================================
+
+-------------------------------------------------------------------------------
+7.1. Hardcore / rare event server
+-------------------------------------------------------------------------------
+
+    MaxActivePlaneEvents: 1
+    SafeRadius: 1000 or 1500
+    DistanceRadius: 1500
+    CleanupRadius: 1000
+    ZombieCount: 15 to 20
+    EnableOpeningAlarm: 1
+    Sites: remote areas, forests, distant military zones
+
+
+-------------------------------------------------------------------------------
+7.2. Balanced server
+-------------------------------------------------------------------------------
+
+    MaxActivePlaneEvents: 3
+    SafeRadius: 1000
+    DistanceRadius: 1000
+    CleanupRadius: 1000
+    ZombieCount: 10 to 15
+    EnableOpeningAlarm: 1
+    Sites: mix of remote and mid-traffic areas
+
+
+-------------------------------------------------------------------------------
+7.3. PvP / high activity server
+-------------------------------------------------------------------------------
+
+    MaxActivePlaneEvents: 5 to 10
+    SafeRadius: 700 to 1000
+    DistanceRadius: 700 to 1000
+    CleanupRadius: 1000
+    ZombieCount: 8 to 15
+    EnableOpeningAlarm: 1
+    Sites: central areas, conflict routes, moderate town proximity
+
+
+-------------------------------------------------------------------------------
+7.4. No zombie event
+-------------------------------------------------------------------------------
+
+    ZombieCount: 0
+    EnableZombieKeyDrop: 0
+
+Attention:
+Without zombies, there is no zombie-carried key.
+Use this mode only if your server has another access logic, such as keys spawning through map economy, traders, parallel events, or roleplay.
+
+
+================================================================================
+8. First installation checklist
+================================================================================
+
+Before opening the server to players:
+
+[ ] Mod added to the startup line.
+[ ] types.xml updated with Types.txt entries.
+[ ] Server started once to generate $profile/M4D_AirPlaneCrash/.
+[ ] PlaneCrashSettings.json reviewed.
+[ ] PlaneCrashSites.json reviewed.
+[ ] PlaneCrashLoot.json reviewed.
+[ ] At least 1 valid crash site configured.
+[ ] At least 1 valid item in each used loot pool.
+[ ] ZombieCount and EnableZombieKeyDrop configured coherently.
+[ ] Logs enabled for the first test.
+[ ] Server starts without RPT errors.
+[ ] Event spawns correctly.
+[ ] Container opens with the correct key.
+[ ] Loot appears in the reward chest.
+[ ] Event is removed after expiration/cleanup.
+[ ] Restart tested with an active event.
+
+
+================================================================================
+9. Common issues
+================================================================================
+
+-------------------------------------------------------------------------------
+9.1. Event does not spawn
+-------------------------------------------------------------------------------
+
+Check:
+
+- EnableMod is 1.
+- MaxActivePlaneEvents is greater than 0.
+- At least one valid site exists in PlaneCrashSites.json.
+- No players are too close to the selected location.
+- No other event is too close.
+- JSON is not broken.
+- RPT does not show invalid class errors.
+
+
+-------------------------------------------------------------------------------
+9.2. Key does not appear
+-------------------------------------------------------------------------------
+
+Check:
+
+- ZombieCount is greater than 0.
+- EnableZombieKeyDrop is 1.
+- Zombies were created.
+- The key carrier zombie was not removed by another system.
+- Key class exists in types.xml.
+
+
+-------------------------------------------------------------------------------
+9.3. Loot does not appear
+-------------------------------------------------------------------------------
+
+Check:
+
+- PlaneCrashLoot.json is valid.
+- MinLootItems and MaxLootItems are above 0.
+- Item classnames are correct.
+- Container/reward chest was created correctly.
+- Reward chest became visible after opening the container.
+
+
+-------------------------------------------------------------------------------
+9.4. Event disappears
+-------------------------------------------------------------------------------
+
+The event has controlled lifetime.
+
+If no players are nearby after expiration, it will be removed.
+
+If players are nearby, the timer may pause/extend the event lifetime.
+
+
+-------------------------------------------------------------------------------
+9.5. Too much server logging
+-------------------------------------------------------------------------------
+
+For live servers, keep:
+
+    EnableDebugLogging = 0
+    LogSoundDispatch = 0
+
+Use detailed logs only for testing or diagnostics.
+
+
+================================================================================
+10. Recommended update procedure
+================================================================================
+
+1. Back up:
+
+    $profile/M4D_AirPlaneCrash/
+
+2. Back up types.xml.
+
+3. Update the mod.
+
+4. Start the server in a test environment if possible.
+
+5. Check the RPT.
+
+6. Test one active event.
+
+7. Only then deploy to the main live server.
