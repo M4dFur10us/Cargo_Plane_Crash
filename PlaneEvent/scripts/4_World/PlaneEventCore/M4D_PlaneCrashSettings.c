@@ -1,5 +1,5 @@
 // =====================================================================================
-// M4D_PlaneCrashSettings.c - VERSÃO FINAL CONSOLIDADA (Unificação Militar JSON)
+// M4D_PlaneCrashSettings.c - VERSÃO FINAL CONSOLIDADA (Unificação Militar JSON + Consumo Chave)
 // Responsabilidade: Gestão centralizada de configurações, locais e tabelas de loot.
 // =====================================================================================
 
@@ -427,6 +427,9 @@ class M4D_PlaneCrashSettings
 	int ZombieCount;
 	int EnableZombieKeyDrop;
 	
+	// MECANICA DE CONSUMO DE CHAVES (Nova Variavel com valor fantasma para injeção automática)
+	int DestroyContainerKeyOnUse = -1;
+	
 	int MinLootItems;
 	int MaxLootItems;
 	
@@ -489,6 +492,15 @@ class M4D_PlaneCrashSettings
 
 	void ValidateSettings()
 	{
+		bool needsResave = false;
+
+		if (DestroyContainerKeyOnUse == -1) 
+		{
+			DestroyContainerKeyOnUse = 1; 
+			needsResave = true;
+			M4D_PlaneCrashLogger.Warn("[Settings] JSON antigo detectado. Injetando 'DestroyContainerKeyOnUse' automaticamente.");
+		}
+
 		if (MaxActivePlaneEvents > 10) 
 		{ 
 			MaxActivePlaneEvents = 3; 
@@ -498,6 +510,11 @@ class M4D_PlaneCrashSettings
 		if (SafeRadius <= 200) { SafeRadius = 1000; }
 		if (DistanceRadius <= 200) { DistanceRadius = 1000; }
 		if (CleanupRadius <= 200) { CleanupRadius = 1000; }
+
+		if (needsResave == true)
+		{
+			Save();
+		}
 	}
 
 	void BuildDefaultSettings()
@@ -532,6 +549,9 @@ class M4D_PlaneCrashSettings
 		PreferredContainer = "Random";
 		ZombieCount = 15;
 		EnableZombieKeyDrop = 1;
+		
+		// Padrão 1 = Consumo da chave correta ativado (Gameplay Hardcore)
+		DestroyContainerKeyOnUse = 1;
 		
 		MinLootItems = 2;
 		MaxLootItems = 5;
