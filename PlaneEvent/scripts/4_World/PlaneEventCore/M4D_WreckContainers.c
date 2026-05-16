@@ -1,5 +1,5 @@
 // =====================================================================================
-// M4D_WreckContainers.c - VERSÃO DEFINITIVA (Erradicação de Vazamento e Áudio Físico)
+// M4D_WreckContainers.c - VERSÃO DEFINITIVA (Mecânica de Consumo de Chaves)
 // Responsabilidade: Contentores do Evento, Caixas de Loot Secundárias e RPC de Áudio.
 // =====================================================================================
 
@@ -31,6 +31,109 @@ string M4D_GetNearestPlayerLog(vector pos, float maxRadius = 10.0)
 		}
 	}
 	return string.Format("Player: %1\nSteamID: %2", playerName, steamId);
+}
+
+	// ---------------------------------------------------------------------------------
+	// MAPEAMENTO DE CHAVES (M4D_GetExpectedKeyTypeForContainer)
+	// ---------------------------------------------------------------------------------
+	// Retorna a classe exata da chave vanilla exigida para abrir o respectivo contentor.
+	// ---------------------------------------------------------------------------------
+string M4D_GetExpectedKeyTypeForContainer(string containerType)
+{
+	if (containerType.Contains("Blue")) 
+	{ 
+		return "ShippingContainerKeys_Blue"; 
+	}
+	if (containerType.Contains("Red")) 
+	{ 
+		return "ShippingContainerKeys_Red"; 
+	}
+	if (containerType.Contains("Yellow")) 
+	{ 
+		return "ShippingContainerKeys_Yellow"; 
+	}
+	if (containerType.Contains("Orange")) 
+	{ 
+		return "ShippingContainerKeys_Orange"; 
+	}
+	return "";
+}
+
+	// ---------------------------------------------------------------------------------
+	// BUSCA DE ENTIDADE DO JOGADOR (M4D_GetNearestPlayerBase)
+	// ---------------------------------------------------------------------------------
+	// Localiza e retorna a entidade física (PlayerBase) do jogador mais próximo.
+	// Necessário para interagir com o inventário e remover a chave das mãos.
+	// ---------------------------------------------------------------------------------
+PlayerBase M4D_GetNearestPlayerBase(vector pos, float maxRadius = 10.0)
+{
+	array<Man> players = new array<Man>();
+	GetGame().GetPlayers(players);
+	
+	for (int i = 0; i < players.Count(); i++) 
+	{
+		Man p = players.Get(i);
+		if (p && p.IsAlive() && vector.Distance(pos, p.GetPosition()) <= maxRadius) 
+		{
+			return PlayerBase.Cast(p);
+		}
+	}
+	return null;
+}
+
+	// ---------------------------------------------------------------------------------
+	// MOTOR DE CONSUMO DE CHAVES (M4D_ConsumeCorrectContainerKeyIfEnabled)
+	// ---------------------------------------------------------------------------------
+	// Valida a configuração do servidor e, se habilitado, apaga a chave correta
+	// das mãos do jogador após o desbloqueio bem sucedido, registrando o log.
+	// ---------------------------------------------------------------------------------
+void M4D_ConsumeCorrectContainerKeyIfEnabled(vector pos, int eventId, string containerType)
+{
+	if (!GetGame().IsServer()) 
+	{
+		return;
+	}
+
+	ref M4D_PlaneCrashSettings settings = M4D_PlaneCrashSettings.Get();
+	if (!settings) 
+	{
+		return;
+	}
+	
+	if (settings.DestroyContainerKeyOnUse != 1) 
+	{
+		return;
+	}
+
+	string expectedKey = M4D_GetExpectedKeyTypeForContainer(containerType);
+	PlayerBase player = M4D_GetNearestPlayerBase(pos);
+
+	if (player)
+	{
+		if (expectedKey != "")
+		{
+			EntityAI itemInHand = player.GetHumanInventory().GetEntityInHands();
+			if (itemInHand)
+			{
+				if (itemInHand.GetType() == expectedKey)
+				{
+					string playerName = "Desconhecido";
+					string steamId = "N/A";
+					
+					if (player.GetIdentity())
+					{
+						playerName = player.GetIdentity().GetName();
+						steamId = player.GetIdentity().GetId();
+					}
+					
+					string keyLog = string.Format("\n[KEY CONSUMED]\nEventID: %1\nPlayer: %2\nSteamID: %3\nContainerType: %4\nKeyType: %5\nReason: correct key consumed after successful unlock", eventId, playerName, steamId, containerType, expectedKey);
+					
+					M4D_PlaneCrashLogger.EventContainer(eventId, keyLog);
+					GetGame().ObjectDelete(itemInHand); 
+				}
+			}
+		}
+	}
 }
 
 	// ---------------------------------------------------------------------------------
@@ -247,6 +350,8 @@ class M4D_WreckContainerRed extends Land_ContainerLocked_Red_DE
 				string playerInfo = M4D_GetNearestPlayerLog(GetPosition());
 				string unlockedLog = string.Format("\n[CONTAINER UNLOCKED]\nEventID: %1\n%2\nContainerType: %3\nRewardChest: unlocked", m_M4DOwnerEventID, playerInfo, this.GetType());
 				M4D_PlaneCrashLogger.EventContainer(m_M4DOwnerEventID, unlockedLog);
+				
+				M4D_ConsumeCorrectContainerKeyIfEnabled(GetPosition(), m_M4DOwnerEventID, this.GetType());
 				
 				// BLOCO DE PROPAGAÇÃO DE SOM (Speed of Sound)
 				ref M4D_PlaneCrashSettings settings = M4D_PlaneCrashSettings.Get();
@@ -503,6 +608,8 @@ class M4D_WreckContainerBlue extends Land_ContainerLocked_Blue_DE
 				string unlockedLog = string.Format("\n[CONTAINER UNLOCKED]\nEventID: %1\n%2\nContainerType: %3\nRewardChest: unlocked", m_M4DOwnerEventID, playerInfo, this.GetType());
 				M4D_PlaneCrashLogger.EventContainer(m_M4DOwnerEventID, unlockedLog);
 				
+				M4D_ConsumeCorrectContainerKeyIfEnabled(GetPosition(), m_M4DOwnerEventID, this.GetType());
+				
 				ref M4D_PlaneCrashSettings settings = M4D_PlaneCrashSettings.Get();
 				if (!settings || settings.EnableOpeningAlarm == 1) 
 				{
@@ -757,6 +864,8 @@ class M4D_WreckContainerYellow extends Land_ContainerLocked_Yellow_DE
 				string unlockedLog = string.Format("\n[CONTAINER UNLOCKED]\nEventID: %1\n%2\nContainerType: %3\nRewardChest: unlocked", m_M4DOwnerEventID, playerInfo, this.GetType());
 				M4D_PlaneCrashLogger.EventContainer(m_M4DOwnerEventID, unlockedLog);
 				
+				M4D_ConsumeCorrectContainerKeyIfEnabled(GetPosition(), m_M4DOwnerEventID, this.GetType());
+				
 				ref M4D_PlaneCrashSettings settings = M4D_PlaneCrashSettings.Get();
 				if (!settings || settings.EnableOpeningAlarm == 1) 
 				{
@@ -1010,6 +1119,8 @@ class M4D_WreckContainerOrange extends Land_ContainerLocked_Orange_DE
 				string playerInfo = M4D_GetNearestPlayerLog(GetPosition());
 				string unlockedLog = string.Format("\n[CONTAINER UNLOCKED]\nEventID: %1\n%2\nContainerType: %3\nRewardChest: unlocked", m_M4DOwnerEventID, playerInfo, this.GetType());
 				M4D_PlaneCrashLogger.EventContainer(m_M4DOwnerEventID, unlockedLog);
+				
+				M4D_ConsumeCorrectContainerKeyIfEnabled(GetPosition(), m_M4DOwnerEventID, this.GetType());
 				
 				ref M4D_PlaneCrashSettings settings = M4D_PlaneCrashSettings.Get();
 				if (!settings || settings.EnableOpeningAlarm == 1) 
